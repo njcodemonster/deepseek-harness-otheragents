@@ -3,7 +3,7 @@
  */
 
 import { describe, expect, it } from 'vitest'
-import { CallId, createAssistantMessage, createToolResultMessage, createUserMessage } from '@deepseek-ai/dsh-llm'
+import { ToolCallId, createAssistantMessage, createToolResultMessage, createUserMessage } from '@deepseek-ai/dsh-llm'
 import { mapToChatHistory } from '../src/message.ts'
 
 describe('mapToChatHistory', () => {
@@ -23,7 +23,7 @@ describe('mapToChatHistory', () => {
     const assistant = createAssistantMessage({
       content: [
         { type: 'text', text: 'let me check' },
-        { type: 'tool-call', id: CallId('tc-9'), name: 'read', arguments: '{"path":"a"}' },
+        { type: 'tool-call', id: ToolCallId('tc-9'), name: 'read', arguments: '{"path":"a"}' },
       ],
       source: { provider: 'devin', model: 'swe-1-7' },
     })
@@ -39,7 +39,7 @@ describe('mapToChatHistory', () => {
 
   it('maps tool results with their call id', () => {
     const result = createToolResultMessage({
-      callId: CallId('tc-9'),
+      callId: ToolCallId('tc-9'),
       content: [{ type: 'text', text: 'the answer' }],
       isError: false,
     })

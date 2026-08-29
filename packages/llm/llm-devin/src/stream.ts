@@ -11,7 +11,7 @@
  * @module dsh-llm-devin/stream
  */
 
-import { CallId, LlmError } from '@deepseek-ai/dsh-llm'
+import { LlmError, ToolCallId } from '@deepseek-ai/dsh-llm'
 import type { FinishReason, StreamChunk, TokenUsage } from '@deepseek-ai/dsh-llm'
 import type { CloudChatEvent } from './cloud-direct/chat.ts'
 
@@ -88,7 +88,7 @@ export async function* translateEvents(
     const chunk: StreamChunk = {
       type: 'block-end',
       index: toolIndex,
-      block: { type: 'tool-call', id: CallId(toolId), name: toolName, arguments: toolArgs },
+      block: { type: 'tool-call', id: ToolCallId(toolId), name: toolName, arguments: toolArgs },
     }
     toolIndex = null
     toolId = ''
@@ -145,7 +145,7 @@ export async function* translateEvents(
         yield {
           type: 'tool-call-delta',
           index: toolIndex,
-          id: CallId(toolId),
+          id: ToolCallId(toolId),
           name: toolName,
           argumentsDelta: ev.argsDelta,
         }

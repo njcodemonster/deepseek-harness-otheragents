@@ -1,0 +1,6 @@
+# Bilingual-pair consistency record (docs/i18n/README.md): the git blob hash of each
+# side as of the last confirmed-consistent state. Both languages carry equal authority;
+# after editing either side, bring the other along and re-record with:
+#   pnpm run verify-translation-pairing --write .agents/notes/implemented/bug-fix/2026-08-24-win32-native-picker-requires-interactive-desktop.md
+2026-08-24-win32-native-picker-requires-interactive-desktop.md: f7fabd803e990b8d2304ef3481d7a06531769a78
+2026-08-24-win32-native-picker-requires-interactive-desktop.zh.md: 275b9c9c8d4cffc34a6e213f046578ad7ee71855

@@ -18,10 +18,13 @@ import type {} from '@deepseek-ai/dsh-host-webserver'
 import { canExecute, hasLinuxChooserBinary } from './probe.ts'
 import type { DirectoryPickerBackendKind } from './resolve.ts'
 import { resolveDirectoryPickerBackend } from './resolve.ts'
+import { hasInteractiveDesktop } from './windows-desktop.ts'
 
 export { canExecute, hasLinuxChooserBinary } from './probe.ts'
 export type { DirectoryPickerBackendKind, DirectoryPickerEnv, DirectoryPickerHostFacts } from './resolve.ts'
 export { resolveDirectoryPickerBackend } from './resolve.ts'
+export { hasInteractiveDesktop } from './windows-desktop.ts'
+export type { DesktopProbeBindings, WindowsDesktopProbeInternals } from './windows-desktop.ts'
 
 /** Cordis plugin name. */
 export const name = 'directory-picker-auto'
@@ -65,6 +68,9 @@ export async function apply(ctx: Context): Promise<void> {
     platform: process.platform,
     env: process.env,
     linuxChooser: hasLinuxChooserBinary(process.env.PATH, canExecute),
+    // The probe platform-gates itself: non-win32 hosts sample true without
+    // loading koffi, so the await is the one boot-time fact read everywhere.
+    interactiveDesktop: await hasInteractiveDesktop(),
   })
   await ctx.effect(async () => {
     // Root-tree create: the Loader root is in-memory (write() is a no-op), so

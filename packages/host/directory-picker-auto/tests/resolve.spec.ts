@@ -12,12 +12,18 @@ const attended: DirectoryPickerHostFacts = {
   platform: 'darwin',
   env: {},
   linuxChooser: false,
+  interactiveDesktop: true,
 }
 
 describe('resolveDirectoryPickerBackend', () => {
   it('resolves native for a loopback bind on a display platform', () => {
     expect(resolveDirectoryPickerBackend(attended)).toBe('native')
     expect(resolveDirectoryPickerBackend({ ...attended, platform: 'win32' })).toBe('native')
+  })
+
+  it('resolves browse when the native chooser cannot reach the operator (isolated or service desktop)', () => {
+    expect(resolveDirectoryPickerBackend({ ...attended, interactiveDesktop: false })).toBe('browse')
+    expect(resolveDirectoryPickerBackend({ ...attended, platform: 'win32', interactiveDesktop: false })).toBe('browse')
   })
 
   it('resolves browse for an all-interfaces bind regardless of other signals', () => {
@@ -29,12 +35,19 @@ describe('resolveDirectoryPickerBackend', () => {
     expect(resolveDirectoryPickerBackend({ ...attended, env: { SSH_TTY: '/dev/pts/3' } })).toBe('browse')
   })
 
-  it('requires a display session and a chooser binary on linux', () => {
+  it('requires a display session and a chooser binary on linux, where DISPLAY is the display signal', () => {
     const linux: DirectoryPickerHostFacts = { ...attended, platform: 'linux', linuxChooser: true }
     expect(resolveDirectoryPickerBackend(linux)).toBe('browse')
     expect(resolveDirectoryPickerBackend({ ...linux, env: { DISPLAY: ':0' } })).toBe('native')
     expect(resolveDirectoryPickerBackend({ ...linux, env: { WAYLAND_DISPLAY: 'wayland-1' } })).toBe('native')
     expect(resolveDirectoryPickerBackend({ ...linux, env: { DISPLAY: ':0' }, linuxChooser: false })).toBe('browse')
+  })
+
+  it('does not consult the interactive-desktop fact on linux, where DISPLAY is the display signal', () => {
+    const linux: DirectoryPickerHostFacts = {
+      ...attended, platform: 'linux', linuxChooser: true, interactiveDesktop: false,
+    }
+    expect(resolveDirectoryPickerBackend({ ...linux, env: { DISPLAY: ':0' } })).toBe('native')
   })
 
   it('resolves browse on platforms the native backend cannot serve, display or not', () => {

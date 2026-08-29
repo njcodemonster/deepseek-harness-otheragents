@@ -29,6 +29,15 @@ const renameControl = vi.hoisted(() => ({
   remainingFailures: 0,
 }))
 
+// The interactive-desktop probe is an OS fact no env stub can force, so the
+// REAL-composition lane pins it: the mounted interaction must not depend on
+// the runner's desktop (CI hosts and sandboxes are non-interactive).
+const desktopControl = vi.hoisted(() => ({ interactive: true }))
+
+vi.mock('../src/windows-desktop.ts', () => ({
+  hasInteractiveDesktop: async () => desktopControl.interactive,
+}))
+
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs/promises')>()
   return {
@@ -85,6 +94,7 @@ afterEach(async () => {
   renameControl.failureCode = 'EPERM'
   renameControl.injectedFailures = 0
   renameControl.remainingFailures = 0
+  desktopControl.interactive = true
 })
 
 /** Write a two-row cordis.yml (webserver + chooser), then boot it through the real Loader. */
@@ -198,6 +208,19 @@ describe('real Loader composition', () => {
   it('mounts the browse backend under an SSH launch', { timeout: 60_000 }, async () => {
     stubAttendedHost()
     vi.stubEnv('SSH_CONNECTION', '10.0.0.2 55 10.0.0.9 22')
+    const { ctx } = await loadComposition('127.0.0.1')
+
+    expect(entryNames(ctx)).toContain(BROWSE)
+    expect(entryNames(ctx)).toContain(BROWSE_SURFACE)
+    expect(entryNames(ctx)).not.toContain(NATIVE)
+    expect(entryNames(ctx)).not.toContain(NATIVE_SURFACE)
+    const picker = ctx.get('directoryPicker') as DirectoryPicker
+    expect(picker.capability().kind).toBe('browse')
+  })
+
+  it('mounts the browse backend when the host has no interactive desktop', { timeout: 60_000 }, async () => {
+    stubAttendedHost()
+    desktopControl.interactive = false
     const { ctx } = await loadComposition('127.0.0.1')
 
     expect(entryNames(ctx)).toContain(BROWSE)

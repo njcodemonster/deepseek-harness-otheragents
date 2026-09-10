@@ -56,11 +56,19 @@ export interface DevinAdapterOptions {
   resolveCredential: (connection: ResolvedDevinOptions) => Promise<DevinCredential>
 }
 
+/**
+ * Cognition's refusal for a model its cloud API does not serve. The account
+ * catalog can advertise these, so the failure is reported as an unusable
+ * selection rather than the `permission_denied`-shaped `AUTH` it arrives as.
+ */
+const LOCAL_ONLY_MODEL_RE = /only in Devin Local/i
+
 /** Classify a cloud-direct transport failure into a harness error code. */
 function classifyCloudError(error: CloudChatError): string {
   const text = error.message
   const code = error.code
   if (code === 'truncated_stream') return 'TRANSPORT'
+  if (LOCAL_ONLY_MODEL_RE.test(text)) return 'INVALID_REQUEST'
   if (code === 'permission_denied' || code === 'unauthenticated') return 'AUTH'
   if (/quota|resource_exhausted/i.test(text)) return QUOTA_EXCEEDED_CODE
   if (/\b429\b|rate.?limit/i.test(text)) return 'RATE_LIMIT'
@@ -86,6 +94,13 @@ export function toLlmError(error: unknown): LlmError {
     return new LlmError(`devin: ${error.message}`, 'INVALID_REQUEST')
   }
   if (error instanceof CloudChatError) {
+    if (LOCAL_ONLY_MODEL_RE.test(error.message)) {
+      return new LlmError(
+        'devin: this model is served only by the Devin desktop app, so the cloud API cannot run it;'
+        + ` select a cloud-served model instead. (${error.message})`,
+        'INVALID_REQUEST',
+      )
+    }
     return new LlmError(`devin: ${error.message}`, classifyCloudError(error))
   }
   if (error instanceof LlmError) return error

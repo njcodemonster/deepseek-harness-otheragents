@@ -29,14 +29,24 @@ describe('buildLiveModels', () => {
   it('filters to wanted families, skips disabled entries, and stamps metadata', () => {
     const byUid = mapOf([
       { modelUid: 'swe-1-7', label: 'SWE-1.7' },
-      { modelUid: 'gpt-5-6-luna-high', label: 'GPT-5.6 Luna High Thinking' },
-      { modelUid: 'gpt-5-6-terra-high', label: 'GPT-5.6 Terra High Thinking', disabled: true },
+      { modelUid: 'claude-sonnet-5-high', label: 'Claude Sonnet 5 High' },
+      { modelUid: 'glm-5-2-max', label: 'GLM-5.2 Max', disabled: true },
       { modelUid: 'gemini-3-5-flash-high', label: 'Gemini 3.5 Flash High' },
     ])
     expect(buildLiveModels(byUid)).toEqual([
       { id: 'swe-1-7', name: 'SWE-1.7', contextWindow: 256_000, maxTokens: 128_000 },
-      { id: 'gpt-5-6-luna-high', name: 'GPT-5.6 Luna High Thinking', contextWindow: 1_050_000, maxTokens: 128_000 },
+      { id: 'claude-sonnet-5-high', name: 'Claude Sonnet 5 High', contextWindow: 200_000, maxTokens: 64_000 },
     ])
+  })
+
+  it('never surfaces the families Cognition serves only in its desktop app', () => {
+    const byUid = mapOf([
+      { modelUid: 'gpt-5-6-sol-high', label: 'GPT-5.6 Sol High Thinking' },
+      { modelUid: 'gpt-5-6-luna-medium', label: 'GPT-5.6 Luna Medium Thinking' },
+      { modelUid: 'swe-1-7', label: 'SWE-1.7' },
+    ])
+    expect(buildLiveModels(byUid).map(model => model.id)).toEqual(['swe-1-7'])
+    expect(FALLBACK_MODELS.some(model => model.id.startsWith('gpt-5-6'))).toBe(false)
   })
 
   it('matches the renamed claude-5-fable family', () => {

@@ -24,13 +24,10 @@ export interface DevinCatalogModel {
 export const DEFAULT_CONTEXT_WINDOW = 256_000
 export const DEFAULT_MAX_TOKENS = 128_000
 
-/** Static fallback list — the 11 model families pi-devin-auth tracks. */
+/** Static fallback list — the cloud-served families pi-devin-auth tracks. */
 export const FALLBACK_MODELS: readonly DevinCatalogModel[] = [
   { id: 'swe-1-7', name: 'SWE-1.7', contextWindow: 256_000, maxTokens: 128_000 },
   { id: 'swe-1-7-lightning', name: 'SWE-1.7 Lightning', contextWindow: 256_000, maxTokens: 128_000 },
-  { id: 'gpt-5-6-sol', name: 'GPT-5.6 Sol', contextWindow: 1_050_000, maxTokens: 128_000 },
-  { id: 'gpt-5-6-luna', name: 'GPT-5.6 Luna', contextWindow: 1_050_000, maxTokens: 128_000 },
-  { id: 'gpt-5-6-terra', name: 'GPT-5.6 Terra', contextWindow: 1_050_000, maxTokens: 128_000 },
   { id: 'claude-opus-4-8', name: 'Claude Opus 4.8', contextWindow: 200_000, maxTokens: 128_000 },
   { id: 'claude-5-fable', name: 'Claude Fable 5', contextWindow: 1_000_000, maxTokens: 128_000 },
   { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', contextWindow: 200_000, maxTokens: 64_000 },
@@ -39,12 +36,16 @@ export const FALLBACK_MODELS: readonly DevinCatalogModel[] = [
   { id: 'grok-4-5', name: 'Grok 4.5', contextWindow: 500_000, maxTokens: 128_000 },
 ]
 
-/** Prefixes of the model families we surface from the live catalog. */
+/**
+ * Prefixes of the model families we surface from the live catalog. The GPT-5.6
+ * families are deliberately absent: the account catalog advertises them (its
+ * provider-family field is 2, the OpenAI family), but the cloud-direct chat
+ * endpoint refuses every one with `This model is only in Devin Local.` — they
+ * run only in the Devin/Windsurf desktop app, so offering them in the selector
+ * would advertise a model every request rejects.
+ */
 const WANTED_PREFIXES: readonly string[] = [
   'swe-1-7',
-  'gpt-5-6-sol',
-  'gpt-5-6-luna',
-  'gpt-5-6-terra',
   'claude-opus-4-8',
   'claude-5-fable',
   'claude-sonnet-5',
@@ -66,9 +67,6 @@ function matchesWantedPrefix(uid: string): boolean {
 const META_BY_PREFIX: Readonly<Record<string, { contextWindow: number; maxTokens: number }>> = {
   'swe-1-7': { contextWindow: 256_000, maxTokens: 128_000 },
   'swe-1-7-lightning': { contextWindow: 256_000, maxTokens: 128_000 },
-  'gpt-5-6-sol': { contextWindow: 1_050_000, maxTokens: 128_000 },
-  'gpt-5-6-luna': { contextWindow: 1_050_000, maxTokens: 128_000 },
-  'gpt-5-6-terra': { contextWindow: 1_050_000, maxTokens: 128_000 },
   'claude-opus-4-8': { contextWindow: 200_000, maxTokens: 128_000 },
   'claude-5-fable': { contextWindow: 1_000_000, maxTokens: 128_000 },
   'claude-sonnet-5': { contextWindow: 200_000, maxTokens: 64_000 },

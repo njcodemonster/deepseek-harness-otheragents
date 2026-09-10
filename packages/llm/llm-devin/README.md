@@ -97,11 +97,19 @@ per-response replay metadata the adapter needs.
 ## Known limitations
 
 - **Curated families from the live account catalog** — the selector surfaces
-  the `pi-devin-auth` families (`swe-1-7`, `gpt-5-6-*`, `claude-*`,
-  `glm-5-2`, `kimi-k2-7`, `grok-4-5`) from the live `GetCascadeModelConfigs`
-  response, so other models the account serves (Gemini, o3, GPT-4/5.x, …) are
-  omitted. Before the first fetch resolves — or when no credential is stored
-  or the catalog is unreachable — the selector shows the static fallback list.
+  the cloud-served families (`swe-1-7`, `claude-*`, `glm-5-2`, `kimi-k2-7`,
+  `grok-4-5`) from the live `GetCascadeModelConfigs` response, so other models
+  the account serves (Gemini, o3, DeepSeek, …) are omitted. Before the first
+  fetch resolves — or when no credential is stored or the catalog is
+  unreachable — the selector shows the static fallback list.
+- **The desktop-app-only GPT-5.6 families are never offered** — the account
+  catalog advertises them (its provider-family field is 2, the OpenAI family),
+  but the cloud-direct chat endpoint refuses every one with `This model is only
+  in Devin Local.`: they run only in the Devin/Windsurf desktop app. Surfacing
+  them would advertise models that every request rejects, so
+  `WANTED_PREFIXES` and `FALLBACK_MODELS` omit them. A refusal of that shape is
+  reported as `INVALID_REQUEST` naming the desktop-app restriction rather than
+  as `AUTH`.
 - **Images deferred** — models declare `text` input only; attachment
   resolution for the cloud-direct `ImageData` wire field is future work.
 - **The sign-in flow lives in the process that started it** — an

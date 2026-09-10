@@ -105,6 +105,13 @@ describe('DevinAdapter.stream', () => {
     await expect(run(adapterFor(mock))).rejects.toMatchObject({ code: 'AUTH' })
   })
 
+  it('reports a desktop-app-only model as an unusable selection, not AUTH', async () => {
+    const mock = await withMock({
+      trailerError: { code: 'permission_denied', message: 'This model is only in Devin Local.' },
+    })
+    await expect(run(adapterFor(mock))).rejects.toMatchObject({ code: 'INVALID_REQUEST' })
+  })
+
   it('sends the app attribution user-agent header', async () => {
     const mock = await withMock({ texts: ['ok'] })
     const chunks = await run(adapterFor(mock))
@@ -125,13 +132,24 @@ describe('DevinAdapter.listModels', () => {
     const mock = await withMock({
       catalog: [
         { label: 'SWE-1.7', modelUid: 'swe-1-7' },
-        { label: 'GPT-5.6 Luna High Thinking', modelUid: 'gpt-5-6-luna-high' },
-        { label: 'GPT-5.6 Terra High Thinking', modelUid: 'gpt-5-6-terra-high', disabled: true },
+        { label: 'Claude Sonnet 5 High', modelUid: 'claude-sonnet-5-high' },
+        { label: 'GLM-5.2 Max', modelUid: 'glm-5-2-max', disabled: true },
         { label: 'Gemini 3.5 Flash High', modelUid: 'gemini-3-5-flash-high' },
       ],
     })
     const models = await adapterFor(mock).listModels('devin')
-    expect(models.map(model => model.id)).toEqual(['swe-1-7', 'gpt-5-6-luna-high'])
+    expect(models.map(model => model.id)).toEqual(['swe-1-7', 'claude-sonnet-5-high'])
+  })
+
+  it('never advertises the families Cognition serves only in its desktop app', async () => {
+    const mock = await withMock({
+      catalog: [
+        { label: 'GPT-5.6 Sol High Thinking', modelUid: 'gpt-5-6-sol-high' },
+        { label: 'SWE-1.7', modelUid: 'swe-1-7' },
+      ],
+    })
+    const models = await adapterFor(mock).listModels('devin')
+    expect(models.map(model => model.id)).toEqual(['swe-1-7'])
   })
 
   it('falls back to the static catalog when no credential resolves', async () => {
@@ -146,10 +164,10 @@ describe('DevinAdapter.listModels', () => {
 
   it('resolves name and context metadata from the live catalog', async () => {
     const mock = await withMock({
-      catalog: [{ label: 'GPT-5.6 Luna High Thinking', modelUid: 'gpt-5-6-luna-high' }],
+      catalog: [{ label: 'Claude Sonnet 5 High', modelUid: 'claude-sonnet-5-high' }],
     })
-    const resolved = await adapterFor(mock).resolveModel('devin', 'gpt-5-6-luna-high')
-    expect(resolved.name).toBe('GPT-5.6 Luna High Thinking')
-    expect(resolved.context?.contextWindow).toBe(1_050_000)
+    const resolved = await adapterFor(mock).resolveModel('devin', 'claude-sonnet-5-high')
+    expect(resolved.name).toBe('Claude Sonnet 5 High')
+    expect(resolved.context?.contextWindow).toBe(200_000)
   })
 })

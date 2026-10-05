@@ -1,10 +1,10 @@
 /**
- * Real-composition guard for the Devin adapter: LlmRuntime, settings-file,
- * credentials-local, the authorization seam, and a bare `llm-devin` row boot
- * from a test-only cordis.yml through the actual Loader + Include path. The
- * `devin` route registers at mount with its static catalog, the Devin
- * sign-in flow appears on the authorization seam, and a request without any
- * credential fails with MISSING_CREDENTIAL instead of reaching the network.
+ * Real-composition guard for the Devin adapter: LlmRuntime, credentials-local,
+ * the authorization seam, and a bare `llm-devin` row boot from a test-only
+ * cordis.yml through the actual Loader + Include path. The `devin` route
+ * registers at mount with its static catalog, the Devin sign-in flow appears
+ * on the authorization seam, and a request without any credential fails with
+ * MISSING_CREDENTIAL instead of reaching the network.
  */
 
 import { mkdtemp, rm, writeFile } from 'node:fs/promises'
@@ -18,7 +18,6 @@ import Include from '@deepseek-ai/cordis-plugin-include'
 import LlmRuntime, { createUserMessage } from '@deepseek-ai/dsh-llm'
 import type { StreamChunk } from '@deepseek-ai/dsh-llm'
 import LocalCredentialProvider from '@deepseek-ai/dsh-credentials-local'
-import FileSettingsProvider from '@deepseek-ai/dsh-settings-file'
 import AuthorizationService from '@deepseek-ai/dsh-authorization'
 import * as LlmDevin from '@deepseek-ai/dsh-llm-devin'
 
@@ -35,19 +34,12 @@ afterEach(async () => {
 /** Boot the composition: bare `llm-devin` row, no config at all. */
 async function loadComposition(): Promise<Context> {
   root = await mkdtemp(join(tmpdir(), 'dsh-devin-composition-'))
-  const settingsPath = join(root, 'settings.yaml')
-  await writeFile(settingsPath, '# personal settings\n')
   await writeFile(join(root, '.credentials.yaml'), 'version: 1\nrefs: {}\n', { mode: 0o600 })
 
   const configPath = join(root, 'cordis.yml')
   await writeFile(configPath, [
     '- id: llm',
     "  name: 'test-llm-service'",
-    '- id: settings',
-    "  name: '@deepseek-ai/dsh-settings-file'",
-    '  config:',
-    `    path: ${JSON.stringify(settingsPath)}`,
-    '    debounceMs: 10',
     '- id: credentials',
     "  name: '@deepseek-ai/dsh-credentials-local'",
     '  config:',
@@ -67,7 +59,6 @@ async function loadComposition(): Promise<Context> {
   ctx.loader.builtins.include = Include
   const modules = new Map<string, unknown>([
     ['test-llm-service', LlmRuntime],
-    ['@deepseek-ai/dsh-settings-file', FileSettingsProvider],
     ['@deepseek-ai/dsh-credentials-local', LocalCredentialProvider],
     ['@deepseek-ai/dsh-authorization', AuthorizationService],
     ['@deepseek-ai/dsh-llm-devin', LlmDevin],

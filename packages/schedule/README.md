@@ -1,15 +1,15 @@
 ---
-description: "The schedule group map: session-local durable reminders over the session log, for users and maintainers navigating the group."
+description: "The schedule package group: Host-owned scheduled reminders and task management."
 kind: "package-group"
 ---
 
-# schedule/ — Session-local reminders
+# schedule/ — Host-owned reminders
 
 English | [中文](README.zh.md)
 
 ## Summary
 
-The schedule group provides session-local reminders for a running conversation: ask the agent to remind you later, at an absolute time, or on a fixed interval, and each reminder arrives as an ordinary message in the same conversation when it comes due. It contains one package with three tools — create, list, and cancel — and no UI or service interface of its own. Reminders survive restarts but stay inside the session: there is no email, SMS, or push notification. This page maps the group; the package README owns the per-package contract.
+Create one-shot, fixed-rate, daily, weekly, or cron reminders for a conversation and keep them across Host restarts. Inspect active and inactive tasks without opening their original Sessions. Use Schedule for reminder creation and delivery, and the optional Tasks page for cross-Session inspection and confirmed deletion. Due reminders arrive as ordinary follow-up messages in the original conversation, not email, SMS, or push notifications.
 
 ## Table of Contents
 
@@ -22,18 +22,21 @@ The schedule group provides session-local reminders for a running conversation: 
 <a id="packages"></a>
 ## Packages
 
-| Package | Role | ctx key |
-|---|---|---|
-| [`schedule/`](schedule/README.md) | Session-local reminders: schedule a one-time or fixed-interval reminder, list what is pending, and cancel one; due reminders arrive as conversation messages | — (tools only, in the exact agent scope) |
+Choose this package for persistent reminder management.
+
+| Package | Role |
+|---|---|
+| [`schedule/`](schedule/README.md) | Host-owned reminder persistence, scheduling, inspection, and explicit deletion |
 
 -----
 
 <a id="related-documentation"></a>
 ## Related documentation
 
-- [Session-local Schedule subsystem](../../docs/subsystems/schedule.md) — durable record, transition, view, and delivery contracts.
-- [Generated tool catalog](../../docs/tool-catalog.md#deepseek-aidsh-schedule) — the `schedule_create`/`schedule_list`/`schedule_delete` schemas the model receives.
-- [Schedule user guide](../../docs/user/guide/schedule.md) — the official configuration path for mounting the package.
+- [Schedule subsystem](../../docs/subsystems/schedule.md) — task records, latest receipts, timing, and delivery contracts.
+- [Generated tool catalog](../../docs/tool-catalog.md#deepseek-aidsh-schedule) — the `schedule_create`/`schedule_list`/`schedule_update`/`schedule_delete` schemas the model receives.
+- [Schedule user guide](../../docs/user/guide/schedule.md) — enable reminders and inspect active or inactive tasks.
+- [Web task page and reminder catalog](../client/ui-schedule/README.md) — browser inspection of tasks and confirmed deletion.
 
 -----
 

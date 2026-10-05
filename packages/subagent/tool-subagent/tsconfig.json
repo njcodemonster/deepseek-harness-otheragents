@@ -24,10 +24,10 @@
       "path": "../../core/session"
     },
     {
-      "path": "../../core/scope"
+      "path": "../../session/session-projection"
     },
     {
-      "path": "../../settings/settings"
+      "path": "../../core/scope"
     },
     {
       "path": "../../llm/llm"

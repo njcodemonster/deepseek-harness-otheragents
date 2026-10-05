@@ -12,11 +12,11 @@
  */
 
 import type { Context } from '@deepseek-ai/cordis'
+import type {} from '@deepseek-ai/cordis-plugin-loader'
 import z from '@deepseek-ai/schemastery'
 import { assertUsableApiKey, LlmError, resolveRetryPolicy, RetryPolicySchema } from '@deepseek-ai/dsh-llm'
 import type { RetryPolicyConfig } from '@deepseek-ai/dsh-llm'
 import { credentialRef } from '@deepseek-ai/dsh-credentials'
-import { installSettingsSection, settingsNamespace } from '@deepseek-ai/dsh-settings'
 import { DEFAULT_CONTEXT_WINDOW, DEFAULT_MAX_TOKENS, FALLBACK_MODELS, type DevinCatalogModel } from './models.ts'
 import { DevinAdapter, PROVIDER, PROVIDER_NAME } from './adapter.ts'
 import type { ResolvedDevinOptions } from './adapter.ts'
@@ -40,7 +40,6 @@ export { translateEvents, mapUsage } from './stream.ts'
 export const name = 'llm-devin'
 export const inject = ['llm']
 
-const NS = settingsNamespace('llm-devin')
 const DEFAULT_API_KEY_ENV = 'DEVIN_API_KEY'
 /** Public API server default; the account's RegisterUser value wins when stored. */
 export const PUBLIC_BASE_URL = DEFAULT_HOST
@@ -124,25 +123,8 @@ export function resolveAdapterOptions(config: Config): ResolvedDevinOptions {
 }
 
 export function apply(ctx: Context, config: Config): void {
-  let current: () => Config = () => config
-  let lastRaw: Config | undefined
-  let lastGood: ResolvedDevinOptions | undefined
-  const options = (): ResolvedDevinOptions => {
-    const raw = current()
-    if (raw === lastRaw && lastGood !== undefined) return lastGood
-    try {
-      const next = resolveAdapterOptions(raw)
-      lastRaw = raw
-      lastGood = next
-      return next
-    } catch (error) {
-      if (lastGood === undefined) throw error
-      lastRaw = raw
-      ctx.logger.error('llm-devin: keeping the last good configuration after an invalid settings section')
-      ctx.logger.error(error)
-      return lastGood
-    }
-  }
+  const settingsNs = ctx.fiber.entry?.options.id ?? name
+  const options = (): ResolvedDevinOptions => resolveAdapterOptions(config)
   options()
 
   const resolveCredential = async (connection: ResolvedDevinOptions): Promise<DevinCredential> => {
@@ -166,23 +148,9 @@ export function apply(ctx: Context, config: Config): void {
 
   const adapter = new DevinAdapter({ options, resolveCredential })
   ctx.llm.registerConfigurableProviders([
-    { provider: PROVIDER, displayName: PROVIDER_NAME, settingsNs: NS, settingsPath: [] },
+    { provider: PROVIDER, displayName: PROVIDER_NAME, settingsNs, settingsPath: [] },
   ])
-  const registration = ctx.llm.registerAdapter([PROVIDER], adapter)
-  let registeredPolicy = options().retryPolicy
-  const ensureRegistrationFacts = (): void => {
-    const policy = options().retryPolicy
-    if (policy === registeredPolicy) return
-    registration.replace([PROVIDER])
-    registeredPolicy = policy
-  }
-
-  installSettingsSection(ctx, NS, Config, config, {
-    setSource: (source) => {
-      current = source
-    },
-    onChange: ensureRegistrationFacts,
-  })
+  ctx.llm.registerAdapter([PROVIDER], adapter)
 
   // The sign-in flow registers lazily when the authorization seam is mounted
   // (the credentials seam is a base-composition constant); the route still
